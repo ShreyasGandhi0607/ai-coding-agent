@@ -4,11 +4,13 @@ from client.llm_client import LLMClient
 from agent.events import AgentEvent, AgentEventType
 from client.response import StreamEventType
 from context.manager import ContextManager
+from tools.registry import create_default_registry
 # this entire class just processes one single message and runs one single time for one message
 class Agent:
     def __init__(self):
         self.client = LLMClient()
         self.context_manager = ContextManager()
+        self.tool_registry = create_default_registry()
 
     async def run(self, message : str):
         yield AgentEvent.agent_start(message=message)
@@ -27,8 +29,11 @@ class Agent:
         # messages = [{"role": "user", "content": "Hey what is going on."}]
         response_text = ""
         
+        tool_schemas = self.tool_registry.get_schemas()
+
         async for event in self.client.chat_completion(
             messages=self.context_manager.get_messages(),
+            tools=tool_schemas if tool_schemas else None,
             stream=True,
         ):
             if event.type == StreamEventType.TEXT_DELTA:
