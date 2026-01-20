@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from client.response import TokenUsage
+from tools.base import ToolResult
 
 class AgentEventType(str, Enum):
     # agent lifecycle events
@@ -11,6 +12,10 @@ class AgentEventType(str, Enum):
     AGENT_END = "agent_end"
     AGENT_ERROR = "agent_error"
 
+    # Tool call events
+    TOOL_CALL_START = "tool_call_start"
+    TOOL_CALL_COMPLETE = "tool_call_complete"
+    
     # task streaming events
     TEXT_DELTA = "text_delta"
     TEXT_COMPLETE = "text_complete"
@@ -60,4 +65,29 @@ class AgentEvent:
         return cls(
             type=AgentEventType.TEXT_COMPLETE,
             data={"content": content}
+        )
+    
+    @classmethod
+    def tool_call_start(cls,call_id : str, name: str, arguments: dict[str,Any]):
+        return cls(
+            type= AgentEventType.TOOL_CALL_START,
+            data = {
+                "call_id": call_id,
+                "name": name,
+                "arguments": arguments, 
+            },
+        )
+    @classmethod
+    def tool_call_complete(cls,call_id : str, name: str, result: ToolResult,):
+        return cls(
+            type= AgentEventType.TOOL_CALL_COMPLETE,
+            data = {
+                "call_id": call_id,
+                "name": name,
+                "success": result.success,
+                "output": result.output,
+                "error": result.error,
+                "metadata": result.metadata,
+                "truncated": result.truncated,
+            }
         )

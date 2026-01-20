@@ -60,6 +60,11 @@ class ToolResult:
             **kwargs,
         )
 
+    def to_model_output(self)->str:
+        if self.success:
+            return self.output
+        return f"Error: {self.error}\n\nOutput:\n{self.output}"
+
 # this is abstract base class for all tools
 class Tool(abc.ABC):
     name: str = "base_tool"
@@ -82,7 +87,7 @@ class Tool(abc.ABC):
         schema = self.schema
         if isinstance(schema, type) and issubclass(schema, BaseModel):
             try:
-                BaseModel(**params)
+                schema(**params)
             except ValidationError as e:
                 errors = []
                 for error in e.errors():

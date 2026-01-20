@@ -43,7 +43,7 @@ class ToolRegistry:
     def get_schemas(self) -> list[dict[str,Any]]:
         return [tool.to_openai_schema() for tool in self.get_tools()]
     
-    async def invoke(self, name: str, params: dict[str,Any], cwd: Path | None,):
+    async def invoke(self, name: str, params: dict[str,Any] | None, cwd: Path,)->ToolResult:
         tool = self.get(name)
 
         if tool is None:
@@ -52,7 +52,9 @@ class ToolRegistry:
                 metadata={"tool_name": name},
             )
         
-        validation_errors = tool.validate_params(params)
+        invocation_params: dict[str, Any] = params or {}
+
+        validation_errors = tool.validate_params(invocation_params)
 
         if validation_errors:
             return ToolResult.error_result(
@@ -60,18 +62,19 @@ class ToolRegistry:
                 metadata={"tool_name": name, "validation_errors": validation_errors},
             )
         invocation = ToolInvocation(
-            params=params,
+            params=invocation_params,
             cwd=cwd,
         )
         try:
-            await tool.execute(invocation)
+            result = await tool.execute(invocation)
         except Exception as e:
             logger.exception(f"Error executing tool {name}: {str(e)}")
-            return ToolResult.error_result(
+            result = ToolResult.error_result(
                 f"Internal Error executing tool {name}: {str(e)}",
                 metadata={"tool_name": name},
             )
 
+        return result
 
 def create_default_registry() -> ToolRegistry:
     registry = ToolRegistry()
