@@ -7,7 +7,7 @@ def resolve_path(base: str | Path, path: str | Path):
     
     return Path(base).resolve() / path 
 
-def display_path_rel_to_cwd(cwd: Path, path: Path | None) -> str:
+def display_path_rel_to_cwd( path: Path | None,cwd: Path,) -> str:
     try:
         p = Path(path)
     except Exception:

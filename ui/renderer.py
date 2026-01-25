@@ -108,12 +108,10 @@ class TUI:
         )
 
         display_args = dict(arguments)
-
-        for key in ('path', 'cwd'):
-            if key in display_args:
-                val = display_args.get(key)
-                if isinstance(val, str) and self.cwd:
-                    display_args[key] = str(display_path_rel_to_cwd(val, self.cwd))
+        for key in ("path", "cwd"):
+            val = display_args.get(key)
+            if isinstance(val, str) and self.cwd:
+                display_args[key] = str(display_path_rel_to_cwd(val, self.cwd))
                     
 
         panel = Panel(
