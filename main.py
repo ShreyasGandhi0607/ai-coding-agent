@@ -21,6 +21,13 @@ class CLI:
             self.agent = agent
             return await self._process_message(message)
     
+    def _get_tool_kind(self, tool_name: str) -> str | None:
+        tool = self.agent.tool_registry.get(tool_name)
+        if not tool:
+            return None
+        kind = getattr(tool, "kind", None)
+        return getattr(kind, "value", None)
+    
     async def _process_message(self, message: str)-> str | None:
         if not self.agent:
             raise ValueError("Agent not initialized.")
@@ -29,7 +36,7 @@ class CLI:
         final_response : str | None = None
         
         async for event in self.agent.run(message=message):
-            print(event)
+            # print(event)
             if event.type == AgentEventType.TEXT_DELTA:
                 content = event.data.get("content", "")
                 if not assistant_streaming:
@@ -44,6 +51,17 @@ class CLI:
             elif event.type == AgentEventType.AGENT_ERROR:
                 error = event.data.get("error", "Unknown error")
                 console.print(f"[error]Agent Error:[/error] {error}")
+            elif event.type == AgentEventType.TOOL_CALL_START:
+                tool_name = event.data.get("tool_name", "unknown")
+                tool_kind = self._get_tool_kind(tool_name)
+                
+                self.tui.tool_call_start(
+                    event.data.get("call_id", ""),
+                    tool_name,
+                    tool_kind,
+                    event.data.get("arguments", {}),
+                )
+
         return final_response
 
 async def run(messages: dict[str,Any]):

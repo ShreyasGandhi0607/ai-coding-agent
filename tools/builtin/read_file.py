@@ -1,4 +1,5 @@
 from pydantic import Field
+from typing import Any
 
 from tools.base import Tool, ToolInvocation, ToolKind, ToolResult
 from utils.paths import is_binary_file, resolve_path
@@ -9,8 +10,9 @@ from utils.text import count_tokens, truncate_text
 class ReadFileParams(BaseModel):
     path: str = Field(
         ..., 
-        description="Path to the file to be read(relative to workding directory or absolute path)"
+        description="Path to the file to be read (relative to working directory or absolute path)"
         )
+
     offset: int = Field(1, ge=1, description="Line number to start reading from (1-based index). Default is 1.")
 
     limit: int | None = Field(
@@ -22,18 +24,29 @@ class ReadFileParams(BaseModel):
 class ReadFileTool(Tool):
     name = "read_file"
     description = (
-        "Read the contents of a text file. Returns te file content with line numbers."
-        "For large files, use offset and limit to read specific portions."
-        "Cannot read binary files(images, executables, etc.)."
+        "Read the contents of a text file. Returns the file content with line numbers. "
+        "For large files, use offset and limit to read specific portions. "
+        "Cannot read binary files (images, executables, etc.)."
         )
     kind = ToolKind.READ
     schema = ReadFileParams
+
+    def validate_params(self, params: dict[str, Any]) -> list[str]:
+        params_copy = dict(params or {})
+        if "file_path" in params_copy and "path" not in params_copy:
+            params_copy["path"] = params_copy.pop("file_path")
+        return super().validate_params(params_copy)
 
     MAX_FILE_SIZE = 1024 * 1024 * 10 # 10 MB
     MAX_OUTPUT_TOKENS = 25000
 
     async def execute(self, invocation: ToolInvocation) -> ToolResult:
-        params = ReadFileParams(**invocation.params)
+        params_dict = dict(invocation.params or {})
+        # accept both `path` and `file_path` from callers
+        if "file_path" in params_dict and "path" not in params_dict:
+            params_dict["path"] = params_dict.pop("file_path")
+
+        params = ReadFileParams(**params_dict)
         path = resolve_path(invocation.cwd, params.path)
 
         if not path.exists():

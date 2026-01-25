@@ -73,8 +73,8 @@ class AgentEvent:
             type= AgentEventType.TOOL_CALL_START,
             data = {
                 "call_id": call_id,
-                "name": name,
-                "arguments": arguments, 
+                "tool_name": name,
+                "arguments": arguments,
             },
         )
     @classmethod
@@ -83,7 +83,7 @@ class AgentEvent:
             type= AgentEventType.TOOL_CALL_COMPLETE,
             data = {
                 "call_id": call_id,
-                "name": name,
+                "tool_name": name,
                 "success": result.success,
                 "output": result.output,
                 "error": result.error,

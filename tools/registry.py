@@ -59,7 +59,11 @@ class ToolRegistry:
         if validation_errors:
             return ToolResult.error_result(
                 f"Invalid parameters for tool {name}: " + "; ".join(validation_errors),
-                metadata={"tool_name": name, "validation_errors": validation_errors},
+                metadata={
+                    "tool_name": name, 
+                    "validation_errors": validation_errors, 
+                    'path': invocation_params.get('path')
+                    },
             )
         invocation = ToolInvocation(
             params=invocation_params,
